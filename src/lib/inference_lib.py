@@ -449,21 +449,18 @@ def load_model_and_generator(model_item, cuda, decoder="viterbi", half=None):
     lexicon_path = model_item.get_lexicon_path()
     lm_path = model_item.get_language_model_path()
 
-    target_dict = Dictionary.load(dict_path)
+    # target_dict = Dictionary.load(dict_path)
     args = get_args(lexicon_path, lm_path)
 
-    if decoder == "viterbi":
-        generator = W2lViterbiDecoder(args, target_dict)
-    else:
-        generator = W2lKenLMDecoder(args, target_dict)
-
+    
     result = ''
     LOGGER.info(f'Loading model from {model_path} cuda {cuda}')
 
     if cuda:
         with torch.cuda.device(SELECTED_DEVICE):
             LOGGER.info(f'using current device: {torch.cuda.current_device()}')
-            model = torch.load(model_path, map_location=SELECTED_DEVICE)
+            mdl, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([mdl_path])
+            model = mdl[0].to(torch.device(SELECTED_DEVICE)) #torch.load(model_path, map_location=SELECTED_DEVICE)
 
         for parameter in model.parameters():
             LOGGER.info('Before half %s', parameter.dtype)
@@ -480,6 +477,14 @@ def load_model_and_generator(model_item, cuda, decoder="viterbi", half=None):
         LOGGER.info(f"{ln_code} Model initialized with GPU successfully")
 
     else:
-        model = torch.load(model_path)
+        mdl, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([mdl_path])
+        model = mdl[0].to(torch.device(SELECTED_DEVICE)) #torch.load(model_path, map_location=SELECTED_DEVICE)
+
+    target_dict = task.target_dictionary
+
+    if decoder == "viterbi":
+        generator = W2lViterbiDecoder(args, target_dict)
+    else:
+        generator = W2lKenLMDecoder(args, target_dict)
 
     return model, generator
