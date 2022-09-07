@@ -47,6 +47,7 @@ class SpeechRecognizer(speech_recognition_open_api_pb2_grpc.SpeechRecognizerServ
         self.file_count = 0
         self.client_buffers = {}
         self.client_transcription = {}
+        self.client_postProcessors = {}
         LOGGER.info('Models Loaded Successfully')
         Path(self.BASE_PATH + 'Startup.done').touch()
 
@@ -124,6 +125,11 @@ class SpeechRecognizer(speech_recognition_open_api_pb2_grpc.SpeechRecognizerServ
 
     # Streaming handler
     def recognize_audio(self, request_iterator, context):
+        # Read essential gRPC metadata
+        metadict = dict(context.invocation_metadata())
+        user = metadict["user"]
+        self.client_postProcessors[user] = metadict["postProcessors"] if "postProcessors" in metadict else []
+
         for data in request_iterator:
             self.count += 1
             LOGGER.debug("Request received for user %s language: %s data.isEnd: %s", data.user, data.language,
@@ -202,6 +208,10 @@ class SpeechRecognizer(speech_recognition_open_api_pb2_grpc.SpeechRecognizerServ
     def clear_states(self, user):
         self.clear_buffers(user)
         self.clear_transcriptions(user)
+
+        # Other states
+        if user in self.client_postProcessors:
+            del self.client_postProcessors[user]
 
     def clear_buffers(self, user):
         if user in self.client_buffers:

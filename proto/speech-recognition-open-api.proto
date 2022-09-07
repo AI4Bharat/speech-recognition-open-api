@@ -94,6 +94,7 @@ message RecognitionConfig {
   optional Model model = 11;
   //  optional bool enableAutomaticPunctuation = 12;
   optional bool enableInverseTextNormalization = 12;
+  repeated string postProcessors = 13;
 }
 
 message Language {
