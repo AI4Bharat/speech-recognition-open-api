@@ -47,6 +47,8 @@ class SpeechRecognizer(speech_recognition_open_api_pb2_grpc.SpeechRecognizerServ
         self.file_count = 0
         self.client_buffers = {}
         self.client_transcription = {}
+        # self.client_language = {}
+        self.client_samplingRate = {}
         self.client_postProcessors = {}
         LOGGER.info('Models Loaded Successfully')
         Path(self.BASE_PATH + 'Startup.done').touch()
@@ -128,6 +130,8 @@ class SpeechRecognizer(speech_recognition_open_api_pb2_grpc.SpeechRecognizerServ
         # Read essential gRPC metadata
         metadict = dict(context.invocation_metadata())
         user = metadict["user"]
+        # self.client_language[user] = metadict["language"] if "language" in metadict else 'en'
+        self.client_samplingRate[user] = metadict["samplingRate"] if "samplingRate" in metadict else 16000
         self.client_postProcessors[user] = metadict["postProcessors"] if "postProcessors" in metadict else []
 
         for data in request_iterator:
